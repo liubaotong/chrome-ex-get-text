@@ -12,6 +12,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use sqlx::sqlite::SqlitePool;
+use dotenv::dotenv;
 
 mod api_doc;
 mod config;
@@ -47,6 +48,9 @@ fn create_routes(db: SqlitePool) -> Router {
 
 #[tokio::main]
 async fn main() {
+    // 加载环境变量
+    dotenv().ok();
+
     // 加载应用配置
     let config = config::Config::load().expect("Failed to load config");
 

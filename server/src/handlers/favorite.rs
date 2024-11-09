@@ -201,22 +201,47 @@ pub async fn create_favorite(
     // 使用当前时间作为创建时间
     let now = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
-    // 插入数据并返回新创建的记录
-    let favorite = sqlx::query_as::<_, Favorite>(
+    // 使用事务来确保数据一致性
+    let mut tx = db.begin().await.map_err(AppError::Database)?;
+
+    // 插入数据
+    let result = sqlx::query(
         "INSERT INTO favorites (category_id, text, url, tags, created_at) 
-         VALUES (?, ?, ?, ?, ?) 
-         RETURNING id, COALESCE((SELECT name FROM categories WHERE id = ?), '未分类') as category_name, 
-         text, url, tags, created_at"
+         VALUES (?, ?, ?, ?, ?)"
     )
     .bind(payload.category_id)
-    .bind(payload.text)
-    .bind(payload.url)
-    .bind(tags_json)
-    .bind(now)
-    .bind(payload.category_id)
-    .fetch_one(&db)
+    .bind(&payload.text)
+    .bind(&payload.url)
+    .bind(&tags_json)
+    .bind(&now)
+    .execute(&mut *tx)
     .await
     .map_err(AppError::Database)?;
+
+    // 获取插入的记录ID
+    let id = result.last_insert_rowid();
+
+    // 查询完整的收藏信息
+    let favorite = sqlx::query_as::<_, Favorite>(
+        "SELECT 
+            f.id,
+            f.category_id,
+            COALESCE(c.name, '未分类') as category_name,
+            f.text,
+            f.url,
+            f.tags,
+            f.created_at
+         FROM favorites f
+         LEFT JOIN categories c ON f.category_id = c.id
+         WHERE f.id = ?"
+    )
+    .bind(id)
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(AppError::Database)?;
+
+    // 提交事务
+    tx.commit().await.map_err(AppError::Database)?;
 
     Ok(Json(favorite))
 }
