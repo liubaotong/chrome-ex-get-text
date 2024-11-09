@@ -8,31 +8,67 @@ use sqlx::sqlite::SqlitePool;
 use sqlx::FromRow;
 use utoipa::ToSchema;
 use crate::error::AppError;
+use chrono::Local;
 
 /// 收藏列表查询参数
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ListFavoriteQuery {
     pub page: Option<i64>,      // 页码
     pub per_page: Option<i64>,  // 每页数量
     pub search: Option<String>, // 搜索关键词
     pub category_id: Option<i64>, // 分类ID
+    pub tag_id: Option<i64>,    // 标签ID
+}
+
+/// 实现自定义反序列化
+impl<'de> Deserialize<'de> for ListFavoriteQuery {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Helper {
+            page: Option<String>,
+            per_page: Option<String>,
+            search: Option<String>,
+            category_id: Option<String>,
+            tag_id: Option<String>,
+        }
+
+        let helper = Helper::deserialize(deserializer)?;
+
+        Ok(ListFavoriteQuery {
+            page: helper.page
+                .and_then(|s| if s.is_empty() { None } else { s.parse().ok() }),
+            per_page: helper.per_page
+                .and_then(|s| if s.is_empty() { None } else { s.parse().ok() }),
+            search: helper.search
+                .filter(|s| !s.is_empty()),
+            category_id: helper.category_id
+                .and_then(|s| if s.is_empty() { None } else { s.parse().ok() }),
+            tag_id: helper.tag_id
+                .and_then(|s| if s.is_empty() { None } else { s.parse().ok() }),
+        })
+    }
 }
 
 /// 收藏数据结构
 #[derive(Debug, Serialize, Deserialize, FromRow, ToSchema)]
 pub struct Favorite {
     pub id: i64,
-    pub category_name: String, // 分类名称
-    pub text: String,         // 收藏描述
-    pub url: String,          // 收藏URL
-    pub tags: String,         // 标签（JSON字符串）
+    pub category_id: Option<i64>,
+    pub category_name: String,
+    pub text: String,
+    pub url: String,
+    pub tags: String,
+    pub created_at: String,
 }
 
 /// 收藏列表响应
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct FavoriteResponse {
-    pub total: i64,           // 总记录数
-    pub items: Vec<Favorite>, // 收藏列表
+    pub total: i64,
+    pub items: Vec<Favorite>,
 }
 
 /// 创建收藏请求
@@ -62,7 +98,8 @@ pub struct UpdateFavorite {
         ("page" = Option<i64>, Query, description = "页码，默认为1"),
         ("per_page" = Option<i64>, Query, description = "每页数量，默认为10"),
         ("search" = Option<String>, Query, description = "搜索关键词"),
-        ("category_id" = Option<i64>, Query, description = "分类ID")
+        ("category_id" = Option<i64>, Query, description = "分类ID"),
+        ("tag_id" = Option<i64>, Query, description = "标签ID")
     ),
     responses(
         (status = 200, description = "成功获取收藏列表", body = FavoriteResponse),
@@ -73,14 +110,14 @@ pub async fn list_favorites(
     Query(params): Query<ListFavoriteQuery>,
     State(db): State<SqlitePool>,
 ) -> Result<Json<FavoriteResponse>, AppError> {
-    // 处理分页参数
     let page = params.page.unwrap_or(1);
     let per_page = params.per_page.unwrap_or(10);
     let offset = (page - 1) * per_page;
 
     // 构建基础SQL查询
     let mut sql = String::from(
-        "SELECT f.id, COALESCE(c.name, '未分类') as category_name, f.text, f.url, f.tags 
+        "SELECT f.id, f.category_id, COALESCE(c.name, '未分类') as category_name, 
+         f.text, f.url, f.tags, f.created_at 
          FROM favorites f 
          LEFT JOIN categories c ON f.category_id = c.id"
     );
@@ -89,7 +126,7 @@ pub async fn list_favorites(
     let mut params_values = Vec::new();
 
     // 处理搜索条件
-    if let Some(search) = params.search {
+    if let Some(search) = &params.search {
         conditions.push("f.text LIKE ?");
         params_values.push(format!("%{}%", search));
     }
@@ -100,6 +137,12 @@ pub async fn list_favorites(
         params_values.push(category_id.to_string());
     }
 
+    // 处理标签筛选
+    if let Some(tag_id) = params.tag_id {
+        conditions.push("f.tags LIKE ?");
+        params_values.push(format!("%\"{}\":%", tag_id));
+    }
+
     // 添加WHERE子句
     if !conditions.is_empty() {
         let where_clause = format!(" WHERE {}", conditions.join(" AND "));
@@ -108,14 +151,14 @@ pub async fn list_favorites(
     }
 
     // 添加排序和分页
-    sql.push_str(" ORDER BY f.id DESC LIMIT ? OFFSET ?");
+    sql.push_str(" ORDER BY f.created_at DESC LIMIT ? OFFSET ?");
 
     // 执行总数查询
     let mut query = sqlx::query_scalar(&count_sql);
     for param in &params_values {
         query = query.bind(param);
     }
-    let total = query.fetch_one(&db)
+    let total: i64 = query.fetch_one(&db)
         .await
         .map_err(AppError::Database)?;
 
@@ -155,21 +198,22 @@ pub async fn create_favorite(
     let tags_json = serde_json::to_string(&payload.tags)
         .map_err(|e| AppError::BadRequest(e.to_string()))?;
 
+    // 使用当前时间作为创建时间
+    let now = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
     // 插入数据并返回新创建的记录
     let favorite = sqlx::query_as::<_, Favorite>(
-        "INSERT INTO favorites (category_id, text, url, tags) 
-         VALUES (?, ?, ?, ?) 
-         RETURNING id, 
-                  COALESCE((SELECT name FROM categories WHERE id = ?), '未分类') as category_name, 
-                  text, 
-                  url, 
-                  tags"
+        "INSERT INTO favorites (category_id, text, url, tags, created_at) 
+         VALUES (?, ?, ?, ?, ?) 
+         RETURNING id, COALESCE((SELECT name FROM categories WHERE id = ?), '未分类') as category_name, 
+         text, url, tags, created_at"
     )
     .bind(payload.category_id)
-    .bind(&payload.text)
-    .bind(&payload.url)
-    .bind(&tags_json)
-    .bind(payload.category_id)  // 用于 COALESCE 查询
+    .bind(payload.text)
+    .bind(payload.url)
+    .bind(tags_json)
+    .bind(now)
+    .bind(payload.category_id)
     .fetch_one(&db)
     .await
     .map_err(AppError::Database)?;

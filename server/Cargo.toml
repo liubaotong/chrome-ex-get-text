@@ -16,3 +16,4 @@ sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "sqlite", "jso
 utoipa = { version = "4.1", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "5.0", features = ["axum"] }
 config = "0.13"
+chrono = "0.4.38"
