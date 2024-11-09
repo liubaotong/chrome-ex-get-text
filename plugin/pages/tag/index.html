@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>标签管理</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>标签管理</h2>
+        <div class="add-tag">
+            <input type="text" id="newTag" placeholder="输入新标签名称">
+            <button id="addBtn">添加标签</button>
+        </div>
+        <div class="tag-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>标签名称</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tagTable">
+                    <!-- 标签列表将通过JavaScript动态添加 -->
+                </tbody>
+            </table>
+        </div>
+        <div id="message" class="message"></div>
+    </div>
+    <script src="tag.js"></script>
+</body>
+</html> 

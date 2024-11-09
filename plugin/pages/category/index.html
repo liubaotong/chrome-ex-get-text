@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>分类管理</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>分类管理</h2>
+        <div class="add-category">
+            <input type="text" id="newCategory" placeholder="输入新分类名称">
+            <button id="addBtn">添加分类</button>
+        </div>
+        <div class="category-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>分类名称</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="categoryTable">
+                    <!-- 分类列表将通过JavaScript动态添加 -->
+                </tbody>
+            </table>
+        </div>
+        <div id="message" class="message"></div>
+    </div>
+    <script src="category.js"></script>
+</body>
+</html> 

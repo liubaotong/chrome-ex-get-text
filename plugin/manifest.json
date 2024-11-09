@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "网页文本收藏",
+  "version": "1.0",
+  "description": "收藏网页中喜欢的文本内容",
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup/index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+} 

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>收藏管理</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>收藏管理</h2>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="搜索收藏内容...">
+        </div>
+        <div class="favorite-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>分类</th>
+                        <th>内容</th>
+                        <th>网址</th>
+                        <th>标签</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="favoriteTable">
+                    <!-- 收藏列表将通过JavaScript动态添加 -->
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination">
+            <button id="prevPage" disabled>上一页</button>
+            <span id="pageInfo">第 1 页</span>
+            <button id="nextPage">下一页</button>
+            <div class="page-size-control">
+                <span>每页显示:</span>
+                <select id="pageSize">
+                    <option value="10">10条</option>
+                    <option value="20">20条</option>
+                    <option value="50">50条</option>
+                    <option value="100">100条</option>
+                </select>
+            </div>
+        </div>
+        <div id="message" class="message"></div>
+    </div>
+    <script src="favorite.js"></script>
+</body>
+</html> 
