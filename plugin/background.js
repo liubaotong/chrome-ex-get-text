@@ -25,13 +25,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.local.get(['serverUrl'], function(result) {
       const serverUrl = result.serverUrl || 'http://localhost:3000';
       
+      // 直接使用request.data中的数据，因为content.js已经正确格式化了数据
+      const data = {
+        category_id: parseInt(request.data.category_id) || null, // 使用category_id而不是category
+        text: request.data.text,
+        url: request.data.url,
+        tags: request.data.tags
+      };
+      
       // 发送数据到服务器
       fetch(`${serverUrl}/api/favorites`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(request.data)
+        body: JSON.stringify(data)
       })
       .then(response => response.json())
       .then(data => {

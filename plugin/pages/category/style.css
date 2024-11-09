@@ -55,7 +55,7 @@ table {
 
 th, td {
     padding: 12px;
-    text-align: left;
+    text-align: center;
     border-bottom: 1px solid #ddd;
 }
 
@@ -67,6 +67,7 @@ th {
 .button-group {
     display: flex;
     gap: 8px;
+    justify-content: center;
 }
 
 .message {

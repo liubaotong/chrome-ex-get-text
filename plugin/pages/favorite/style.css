@@ -177,4 +177,296 @@ button:disabled {
     width: 100%;
     min-height: 100px;
     margin-bottom: 10px;
-} 
+}
+
+/* 添加时间列样式 */
+.time-cell {
+    white-space: nowrap;
+    font-size: 14px;
+    color: #666;
+}
+
+/* 编辑弹窗样式 */
+.text-collector-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.dialog-content {
+    background: white;
+    padding: 0;
+    border-radius: 8px;
+    width: 500px;
+    max-height: 90vh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.dialog-header {
+    padding: 12px 25px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.dialog-title {
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.close-btn {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.dialog-body {
+    padding: 15px 25px 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.dialog-footer {
+    padding: 15px 25px;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #0078d4;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,120,212,0.2);
+}
+
+textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+}
+
+select[multiple].form-control {
+    height: 72px;
+    overflow-y: auto;
+}
+
+.primary-btn {
+    background: #0078d4;
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.primary-btn:hover {
+    background: #106ebe;
+}
+
+.primary-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* 现有样式保留，添加或修改以下样式 */
+
+.filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+    padding: 0 12px;
+}
+
+.search-group {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+}
+
+#searchInput {
+    flex: 1;
+    min-width: 200px;
+}
+
+#searchBtn {
+    white-space: nowrap;
+    padding: 8px 20px;
+}
+
+.filter-group {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 120px;
+    background-color: white;
+}
+
+.favorite-list {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+table {
+    margin-top: 0;
+}
+
+th {
+    padding: 15px 12px;
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-align: center;
+    color: #2c3e50;
+    border-bottom: 2px solid #dee2e6;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+    background-color: #f8f9fa;
+}
+
+.content-cell {
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+.url-cell {
+    max-width: 300px;
+}
+
+.time-cell {
+    font-size: 13px;
+    text-align: center;
+    color: #666;
+}
+
+.button-group {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.button-group button {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* 编辑弹窗优化 */
+.dialog-content {
+    width: 600px;
+    padding: 10px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.form-group textarea {
+    min-height: 120px;
+    line-height: 1.6;
+}
+
+.form-group select[multiple] {
+    height: 120px;
+}
+
+.btn-container {
+    margin-top: 30px;
+    text-align: right;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+#save-btn {
+    padding: 10px 30px;
+    font-size: 15px;
+}
+
+#save-message {
+    text-align: center;
+}
+
+/* 消息提示优化 */
+.message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 10001;
+    transition: all 0.3s ease;
+}

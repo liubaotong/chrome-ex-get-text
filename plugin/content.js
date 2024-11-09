@@ -49,7 +49,7 @@ style.textContent = `
   
   .dialog-content {
     background: white;
-    padding: 25px;
+    padding: 25px 25px 10px;
     border-radius: 8px;
     width: 360px;
     max-height: 90vh;
@@ -116,7 +116,7 @@ style.textContent = `
   }
   
   .form-group select[multiple] {
-    height: 100px;
+    height: 78px;
   }
   
   .dialog-title {
@@ -124,13 +124,13 @@ style.textContent = `
     color: #2c3e50;
     font-size: 24px;
     font-weight: 600;
-    margin-bottom: 25px;
+    margin-bottom: 15px;
     margin-top: 10px;
   }
   
   .btn-container {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 5px;
   }
   
   #save-btn {
@@ -218,10 +218,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       saveBtn.textContent = '保存中...';
       
       const data = {
-        category: dialog.querySelector('#category-select').value,
+        category_id: parseInt(dialog.querySelector('#category-select').value) || null,
         text: dialog.querySelector('#selected-text').value,
         url: dialog.querySelector('#page-url').value,
-        tags: Array.from(dialog.querySelector('#tag-select').selectedOptions).map(option => option.value)
+        tags: Array.from(dialog.querySelector('#tag-select').selectedOptions)
+          .map(option => option.textContent) // 使用标签名称而不是ID
       };
       
       try {
@@ -276,6 +277,14 @@ async function loadCategoriesAndTags() {
     const categoriesResponse = await fetch(`${serverUrl}/api/categories`);
     const categories = await categoriesResponse.json();
     const categorySelect = document.querySelector('#category-select');
+    categorySelect.innerHTML = ''; // 清空现有选项
+    
+    // 添加默认选项
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = '请选择分类';
+    categorySelect.appendChild(defaultOption);
+    
     categories.forEach(category => {
       const option = document.createElement('option');
       option.value = category.id;
@@ -287,6 +296,8 @@ async function loadCategoriesAndTags() {
     const tagsResponse = await fetch(`${serverUrl}/api/tags`);
     const tags = await tagsResponse.json();
     const tagSelect = document.querySelector('#tag-select');
+    tagSelect.innerHTML = ''; // 清空现有选项
+    
     tags.forEach(tag => {
       const option = document.createElement('option');
       option.value = tag.id;

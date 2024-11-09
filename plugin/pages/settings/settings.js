@@ -36,15 +36,23 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        testBtn.disabled = true;
+        testBtn.textContent = '测试中...';
+
         try {
             const response = await fetch(`${serverUrl}/api/health`);
-            if (response.ok) {
-                showMessage('连接成功', 'success');
+            const data = await response.json();
+            
+            if (response.ok && data.status === 'ok') {
+                showMessage('连接成功: ' + data.message, 'success');
             } else {
-                showMessage('连接失败: ' + response.statusText, 'error');
+                showMessage('连接失败: ' + (data.message || response.statusText), 'error');
             }
         } catch (error) {
             showMessage('连接失败: ' + error.message, 'error');
+        } finally {
+            testBtn.disabled = false;
+            testBtn.textContent = '测试连接';
         }
     });
 
@@ -52,10 +60,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function showMessage(text, type) {
         messageDiv.textContent = text;
         messageDiv.className = `message ${type}`;
+        messageDiv.style.display = 'block';
         
         // 3秒后自动隐藏消息
         setTimeout(() => {
-            messageDiv.style.display = 'none';
+            messageDiv.style.opacity = '0';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+                messageDiv.style.opacity = '1';
+            }, 300);
         }, 3000);
     }
 }); 

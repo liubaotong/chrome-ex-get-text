@@ -1,6 +1,9 @@
 use axum::{
     routing::{get, post, delete, put},
     Router,
+    response::IntoResponse,
+    http::StatusCode,
+    Json,
 };
 use std::net::SocketAddr;
 use tower::ServiceBuilder;
@@ -13,6 +16,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use sqlx::sqlite::SqlitePool;
 use dotenv::dotenv;
+use serde_json::json;
 
 mod api_doc;
 mod config;
@@ -24,10 +28,20 @@ mod handlers {
     pub mod tag;
 }
 
+// 添加健康检查处理函数
+async fn health_check() -> impl IntoResponse {
+    let response = json!({
+        "status": "ok",
+        "message": "Service is healthy"
+    });
+    (StatusCode::OK, Json(response))
+}
+
 /// 创建应用路由
 /// 设置所有 API 端点的路由规则
 fn create_routes(db: SqlitePool) -> Router {
     Router::new()
+        .route("/api/health", get(health_check))  // 添加健康检查路由
         .route("/api/categories", get(handlers::category::list_categories))
         .route("/api/categories", post(handlers::category::create_category))
         .route("/api/categories/:id", get(handlers::category::get_category))

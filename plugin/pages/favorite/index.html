@@ -8,18 +8,28 @@
 <body>
     <div class="container">
         <h2>收藏管理</h2>
-        <div class="search-bar">
-            <input type="text" id="searchInput" placeholder="搜索收藏内容...">
+        <div class="filter-bar">
+            <div class="search-group">
+                <input type="text" id="searchInput" placeholder="搜索收藏内容...">
+                <button id="searchBtn">搜索</button>
+            </div>
+            <div class="filter-group">
+                <select id="categoryFilter" class="filter-select">
+                    <option value="">全部分类</option>
+                </select>
+                <select id="tagFilter" class="filter-select">
+                    <option value="">全部标签</option>
+                </select>
+            </div>
         </div>
         <div class="favorite-list">
             <table>
                 <thead>
                     <tr>
-                        <th>分类</th>
-                        <th>内容</th>
-                        <th>网址</th>
-                        <th>标签</th>
-                        <th>操作</th>
+                        <th width="35%">内容</th>
+                        <th width="30%">网址</th>
+                        <th width="20%">添加时间</th>
+                        <th width="15%">操作</th>
                     </tr>
                 </thead>
                 <tbody id="favoriteTable">

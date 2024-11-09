@@ -15,14 +15,22 @@ label {
     display: block;
     margin-bottom: 8px;
     font-weight: bold;
+    color: #2c3e50;
 }
 
 input {
     width: 100%;
-    padding: 8px;
+    padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    border-color: #0078d4;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,120,212,0.2);
 }
 
 .button-group {
@@ -33,43 +41,53 @@ input {
 
 button {
     padding: 8px 16px;
-    background-color: #0078d4;
-    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+    transition: all 0.3s ease;
 }
 
-button:hover {
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#saveBtn {
+    background-color: #0078d4;
+    color: white;
+}
+
+#saveBtn:hover:not(:disabled) {
     background-color: #106ebe;
 }
 
 #testBtn {
     background-color: #5c5c5c;
+    color: white;
 }
 
-#testBtn:hover {
+#testBtn:hover:not(:disabled) {
     background-color: #4a4a4a;
 }
 
 .message {
     margin-top: 20px;
-    padding: 10px;
+    padding: 12px;
     border-radius: 4px;
+    font-size: 14px;
     display: none;
+    transition: opacity 0.3s ease;
 }
 
 .message.success {
-    display: block;
-    background-color: #dff0d8;
-    color: #3c763d;
-    border: 1px solid #d6e9c6;
+    background-color: #e6f4ea;
+    color: #1e7e34;
+    border: 1px solid #c3e6cb;
 }
 
 .message.error {
-    display: block;
-    background-color: #f2dede;
-    color: #a94442;
-    border: 1px solid #ebccd1;
+    background-color: #fde7e9;
+    color: #dc3545;
+    border: 1px solid #f5c6cb;
 } 
