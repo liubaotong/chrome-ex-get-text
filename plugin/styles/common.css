@@ -83,7 +83,7 @@ th {
     border-radius: 4px;
     font-size: 14px;
     display: none;
-    z-index: 101;
+    z-index: 100;
     transition: opacity 0.3s ease;
     text-align: center;
     min-width: 200px;
@@ -142,7 +142,7 @@ th {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 100;
+    z-index: 99;
 }
 
 .dialog-content {
