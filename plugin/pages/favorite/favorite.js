@@ -156,7 +156,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </div>
                 <div class="dialog-footer">
                     <button id="save-btn" class="primary-btn">保存</button>
-                    <div id="save-message"></div>
                 </div>
             </div>
         `;
