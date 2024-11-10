@@ -22,6 +22,7 @@ serde_json = "1.0"
 sqlx = { version = "0.7", features = ["runtime-tokio-native-tls", "sqlite", "json"] }
 utoipa = { version = "4.1", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "5.0", features = ["axum"] }
+validator = { version = "0.16", features = ["derive"] }
 config = "0.13"
 chrono = "0.4.38"
 dotenv = "0.15.0"

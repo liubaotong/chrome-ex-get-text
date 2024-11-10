@@ -1,8 +1,9 @@
 use axum::{
     routing::{get, post, delete, put},
+    body::Body,
     Router,
     response::IntoResponse,
-    http::StatusCode,
+    http::{StatusCode, Request, Response},
     Json,
 };
 use std::net::SocketAddr;
@@ -17,6 +18,8 @@ use utoipa_swagger_ui::SwaggerUi;
 use sqlx::sqlite::SqlitePool;
 use dotenv::dotenv;
 use serde_json::json;
+use tracing::Level;
+use std::time::Duration;
 
 mod api_doc;
 mod config;
@@ -98,7 +101,26 @@ async fn main() {
     let app = Router::new()
         .merge(swagger_ui)
         .merge(api_routes)
-        .layer(middleware);
+        .layer(middleware)
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(|request: &Request<Body>| {
+                    tracing::span!(
+                        Level::INFO,
+                        "request",
+                        method = %request.method(),
+                        uri = %request.uri(),
+                        version = ?request.version(),
+                    )
+                })
+                .on_response(|response: &Response<Body>, latency: Duration, _: &tracing::Span| {
+                    tracing::info!(
+                        status = response.status().as_u16(),
+                        latency = ?latency,
+                        "response"
+                    );
+                })
+        );
 
     // 配置并启动服务器
     let addr = SocketAddr::from(([127, 0, 0, 1], config.server.port));

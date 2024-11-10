@@ -10,96 +10,74 @@ pub async fn init_db() -> Result<SqlitePool, sqlx::Error> {
         .connect(&database_url)
         .await?;
 
-    // 创建表
+    // 运行数据库迁移
+    run_migrations(&pool).await?;
+
+    Ok(pool)
+}
+
+async fn run_migrations(pool: &SqlitePool) -> Result<(), sqlx::Error> {
+    // 创建迁移表
     sqlx::query(
         r#"
-        CREATE TABLE IF NOT EXISTS categories (
+        CREATE TABLE IF NOT EXISTS migrations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE
+            version INTEGER NOT NULL UNIQUE,
+            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         "#,
     )
-    .execute(&pool)
+    .execute(pool)
     .await?;
 
-    // 检查favorites表是否存在
-    let table_exists = sqlx::query_scalar::<_, i32>(
-        "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='favorites'"
+    // 获取当前版本
+    let current_version: i64 = sqlx::query_scalar(
+        "SELECT COALESCE(MAX(version), 0) FROM migrations"
     )
-    .fetch_one(&pool)
+    .fetch_one(pool)
     .await?;
 
-    if table_exists == 0 {
-        // 如果表不存在，创建新表（包含created_at字段）
+    // 如果是新数据库或需要升级
+    if current_version < 1 {
+        let mut tx = pool.begin().await?;
+
+        // 创建基础表
         sqlx::query(
             r#"
-            CREATE TABLE favorites (
+            CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                category_id INTEGER,
+                name TEXT NOT NULL UNIQUE
+            );
+
+            CREATE TABLE IF NOT EXISTS tags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE
+            );
+
+            CREATE TABLE IF NOT EXISTS favorites (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 text TEXT NOT NULL,
                 url TEXT NOT NULL,
+                category_id INTEGER,
                 tags TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY (category_id) REFERENCES categories (id)
-            )
+            );
             "#,
         )
-        .execute(&pool)
-        .await?;
-    } else {
-        // 检查created_at列是否存在
-        let column_exists = sqlx::query_scalar::<_, i32>(
-            "SELECT count(*) FROM pragma_table_info('favorites') WHERE name='created_at'"
-        )
-        .fetch_one(&pool)
+        .execute(&mut *tx)
         .await?;
 
-        if column_exists == 0 {
-            // 如果列不存在，创建一个临时表
-            sqlx::query(
-                r#"
-                BEGIN TRANSACTION;
-                
-                -- 创建新表
-                CREATE TABLE favorites_new (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    category_id INTEGER,
-                    text TEXT NOT NULL,
-                    url TEXT NOT NULL,
-                    tags TEXT NOT NULL,
-                    created_at TEXT NOT NULL,
-                    FOREIGN KEY (category_id) REFERENCES categories (id)
-                );
-                
-                -- 复制数据，使用当前时间作为created_at的值
-                INSERT INTO favorites_new (id, category_id, text, url, tags, created_at)
-                SELECT id, category_id, text, url, tags, datetime('now')
-                FROM favorites;
-                
-                -- 删除旧表
-                DROP TABLE favorites;
-                
-                -- 重命名新表
-                ALTER TABLE favorites_new RENAME TO favorites;
-                
-                COMMIT;
-                "#,
-            )
-            .execute(&pool)
-            .await?;
-        }
+        // 记录迁移版本
+        sqlx::query(
+            "INSERT INTO migrations (version) VALUES (?)"
+        )
+        .bind(1)
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
     }
 
-    sqlx::query(
-        r#"
-        CREATE TABLE IF NOT EXISTS tags (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE
-        )
-        "#,
-    )
-    .execute(&pool)
-    .await?;
-
-    Ok(pool)
+    Ok(())
 } 
