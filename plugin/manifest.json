@@ -1,16 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "网页文本收藏",
+  "name": "收藏管理器",
   "version": "1.0",
-  "description": "收藏网页中喜欢的文本内容",
+  "description": "网页文本收藏工具",
   "permissions": [
     "contextMenus",
     "storage",
     "tabs"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "http://localhost:*/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "action": {
     "default_popup": "popup/index.html"
   },
@@ -21,6 +24,17 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "styles/*",
+        "utils/*",
+        "pages/*",
+        "templates/*"
+      ],
+      "matches": ["<all_urls>"]
     }
   ]
 } 

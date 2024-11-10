@@ -1,30 +1,42 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const newTagInput = document.getElementById('newTag');
-    const addBtn = document.getElementById('addBtn');
-    const tagTable = document.getElementById('tagTable');
-    const messageDiv = document.getElementById('message');
-    let serverUrl;
-
-    // 获取服务器地址
-    chrome.storage.local.get(['serverUrl'], function(result) {
-        serverUrl = result.serverUrl || 'http://localhost:3000';
-        loadTags();
-    });
-
-    // 加载标签列表
-    async function loadTags() {
+class TagManager {
+    constructor() {
+        this.newTagInput = document.getElementById('newTag');
+        this.addBtn = document.getElementById('addBtn');
+        this.tagTable = document.getElementById('tagTable');
+        this.messageDiv = document.getElementById('message');
+        
+        this.init();
+    }
+    
+    init() {
+        this.loadTags();
+        this.bindEvents();
+    }
+    
+    bindEvents() {
+        this.addBtn.addEventListener('click', () => this.addTag());
+    }
+    
+    async loadTags() {
         try {
-            const response = await fetch(`${serverUrl}/api/tags`);
-            const tags = await response.json();
-            renderTags(tags);
+            console.log('开始加载标签...');
+            const tags = await window.utils.fetchApi('/api/tags');
+            console.log('获取到的标签数据:', tags);
+            this.renderTags(tags);
         } catch (error) {
-            showMessage('加载标签失败: ' + error.message, 'error');
+            console.error('加载标签失败:', error);
+            this.showErrorMessage('加载标签失败');
         }
     }
 
-    // 渲染标签列表
-    function renderTags(tags) {
-        tagTable.innerHTML = '';
+    renderTags(tags) {
+        console.log('开始渲染标签...');
+        if (!Array.isArray(tags)) {
+            console.error('标签数据不是数组格式:', tags);
+            return;
+        }
+        
+        this.tagTable.innerHTML = '';
         tags.forEach(tag => {
             const tr = document.createElement('tr');
             tr.dataset.id = tag.id;
@@ -37,51 +49,41 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </td>
             `;
-            tagTable.appendChild(tr);
+            this.tagTable.appendChild(tr);
 
-            // 绑定编辑按钮事件
             tr.querySelector('.edit-btn').addEventListener('click', () => {
-                startEdit(tr, tag);
+                this.startEdit(tr, tag);
             });
 
-            // 绑定删除按钮事件
             tr.querySelector('.delete-btn').addEventListener('click', () => {
-                deleteTag(tag.id);
+                this.deleteTag(tag.id);
             });
         });
+        console.log('标签渲染完成');
     }
 
-    // 添加新标签
-    addBtn.addEventListener('click', async function() {
-        const name = newTagInput.value.trim();
+    async addTag() {
+        const name = this.newTagInput.value.trim();
         if (!name) {
-            showMessage('请输入标签名称', 'error');
+            this.showErrorMessage('请输入标签名称');
             return;
         }
 
         try {
-            const response = await fetch(`${serverUrl}/api/tags`, {
+            await window.utils.fetchApi('/api/tags', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({ name })
             });
 
-            if (response.ok) {
-                showMessage('添加成功', 'success');
-                newTagInput.value = '';
-                loadTags();
-            } else {
-                throw new Error('添加失败');
-            }
+            this.showSuccessMessage('添加成功');
+            this.newTagInput.value = '';
+            await this.loadTags();
         } catch (error) {
-            showMessage('添加失败: ' + error.message, 'error');
+            this.showErrorMessage('添加标签失败');
         }
-    });
+    }
 
-    // 开始编辑
-    function startEdit(tr, tag) {
+    startEdit(tr, tag) {
         const nameCell = tr.querySelector('.tag-name');
         const originalName = nameCell.textContent;
         
@@ -96,70 +98,89 @@ document.addEventListener('DOMContentLoaded', function() {
         const cancelBtn = nameCell.querySelector('.cancel-btn');
 
         saveBtn.addEventListener('click', () => {
-            updateTag(tag.id, input.value.trim());
+            this.updateTag(tag.id, input.value.trim());
         });
 
         cancelBtn.addEventListener('click', () => {
             nameCell.textContent = originalName;
         });
+
+        input.focus();
+        input.select();
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.updateTag(tag.id, input.value.trim());
+            }
+        });
     }
 
-    // 更新标签
-    async function updateTag(id, name) {
+    async updateTag(id, name) {
         if (!name) {
-            showMessage('标签名称不能为空', 'error');
+            this.showErrorMessage('标签名称不能为空');
             return;
         }
 
         try {
-            const response = await fetch(`${serverUrl}/api/tags/${id}`, {
+            await window.utils.fetchApi(`/api/tags/${id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({ name })
             });
 
-            if (response.ok) {
-                showMessage('更新成功', 'success');
-                loadTags();
-            } else {
-                throw new Error('更新失败');
-            }
+            this.showSuccessMessage('更新成功');
+            await this.loadTags();
         } catch (error) {
-            showMessage('更新失败: ' + error.message, 'error');
+            this.showErrorMessage('更新标签失败');
         }
     }
 
-    // 删除标签
-    async function deleteTag(id) {
+    async deleteTag(id) {
         if (!confirm('确定要删除这个标签吗？')) {
             return;
         }
 
         try {
-            const response = await fetch(`${serverUrl}/api/tags/${id}`, {
+            await window.utils.fetchApi(`/api/tags/${id}`, {
                 method: 'DELETE'
             });
 
-            if (response.ok) {
-                showMessage('删除成功', 'success');
-                loadTags();
-            } else {
-                throw new Error('删除失败');
-            }
+            this.showSuccessMessage('删除成功');
+            await this.loadTags();
         } catch (error) {
-            showMessage('删除失败: ' + error.message, 'error');
+            this.showErrorMessage('删除标签失败');
         }
     }
 
-    // 显示消息
-    function showMessage(text, type) {
-        messageDiv.textContent = text;
-        messageDiv.className = `message ${type}`;
+    showErrorMessage(message) {
+        this.messageDiv.textContent = message;
+        this.messageDiv.className = 'error';
+        this.messageDiv.style.display = 'block';
+        this.messageDiv.style.opacity = '1';
         
         setTimeout(() => {
-            messageDiv.style.display = 'none';
+            this.messageDiv.style.opacity = '0';
+            setTimeout(() => {
+                this.messageDiv.style.display = 'none';
+            }, 300);
         }, 3000);
     }
-}); 
+
+    showSuccessMessage(message) {
+        this.messageDiv.textContent = message;
+        this.messageDiv.className = 'success';
+        this.messageDiv.style.display = 'block';
+        this.messageDiv.style.opacity = '1';
+        
+        setTimeout(() => {
+            this.messageDiv.style.opacity = '0';
+            setTimeout(() => {
+                this.messageDiv.style.display = 'none';
+            }, 300);
+        }, 3000);
+    }
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    new TagManager();
+});

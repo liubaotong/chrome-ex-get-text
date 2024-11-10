@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const searchInput = document.getElementById('searchInput');
     const pageSizeSelect = document.getElementById('pageSize');
     const favoriteTable = document.getElementById('favoriteTable');
@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const tagFilter = document.getElementById('tagFilter');
     const searchBtn = document.getElementById('searchBtn');
     
-    let serverUrl;
     let currentPage = 1;
     let totalPages = 1;
     let searchTimeout;
@@ -20,12 +19,10 @@ document.addEventListener('DOMContentLoaded', function() {
         search: ''
     };
 
-    // 获取服务器地址
-    chrome.storage.local.get(['serverUrl'], function(result) {
-        serverUrl = result.serverUrl || 'http://localhost:3000';
-        loadFilters();  // 加载筛选选项
-        loadFavorites();
-    });
+    // 使用 window.utils.getServerUrl() 替代直接获取
+    const serverUrl = await window.utils.getServerUrl();
+    loadFilters();
+    loadFavorites();
 
     // 搜索输入防抖
     searchInput.addEventListener('input', function() {
@@ -70,9 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 tag_id: currentFilters.tag
             });
 
-            const response = await fetch(`${serverUrl}/api/favorites?${queryParams}`);
-            const data = await response.json();
-            
+            const data = await window.utils.fetchApi(`/api/favorites?${queryParams}`);
             totalPages = Math.ceil(data.total / pageSize);
             renderFavorites(data.items);
             updatePagination();
@@ -134,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 显示编辑弹窗
     async function showEditDialog(favorite) {
         const dialog = document.createElement('div');
-        dialog.className = 'text-collector-dialog';
+        dialog.className = 'dialog text-collector-dialog';
         dialog.innerHTML = `
             <div class="dialog-content">
                 <div class="dialog-header">
@@ -161,8 +156,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="dialog-footer">
                     <button id="save-btn" class="primary-btn">保存</button>
+                    <div id="save-message"></div>
                 </div>
-                <div id="save-message" class="save-message"></div>
             </div>
         `;
         document.body.appendChild(dialog);
@@ -180,43 +175,48 @@ document.addEventListener('DOMContentLoaded', function() {
             const saveBtn = dialog.querySelector('#save-btn');
             const messageDiv = dialog.querySelector('#save-message');
 
-            saveBtn.disabled = true;
-            saveBtn.textContent = '保存中...';
-
-            const data = {
-                category_id: parseInt(dialog.querySelector('#category-select').value) || null,
-                text: dialog.querySelector('#selected-text').value,
-                url: dialog.querySelector('#page-url').value,
-                tags: Array.from(dialog.querySelector('#tag-select').selectedOptions)
-                    .map(option => option.textContent) // 使用标签名称而不是ID
-            };
-
             try {
-                const response = await fetch(`${serverUrl}/api/favorites/${favorite.id}`, {
+                // 禁用保存按钮并显示加载状态
+                saveBtn.disabled = true;
+                saveBtn.textContent = '保存中...';
+                saveBtn.style.backgroundColor = '#ccc';  // 设置为禁用状态的颜色
+                messageDiv.textContent = '';  // 清空之前的消息
+
+                const data = {
+                    category_id: parseInt(dialog.querySelector('#category-select').value) || null,
+                    text: dialog.querySelector('#selected-text').value,
+                    url: dialog.querySelector('#page-url').value,
+                    tags: Array.from(dialog.querySelector('#tag-select').selectedOptions)
+                        .map(option => option.textContent)
+                };
+
+                await window.utils.fetchApi(`/api/favorites/${favorite.id}`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify(data)
                 });
 
-                if (response.ok) {
-                    messageDiv.textContent = '保存成功！';
-                    messageDiv.className = 'save-message success';
-                    
-                    setTimeout(() => {
-                        dialog.remove();
-                        loadFavorites(); // 重新加载列表
-                    }, 1000);
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || '保存失败');
-                }
+                // 显示成功消息，恢复按钮状态
+                messageDiv.textContent = '保存成功';
+                messageDiv.className = 'success-message';
+                saveBtn.textContent = '保存';
+                saveBtn.style.backgroundColor = '#0078d4';  // 恢复原来的颜色
+                
+                // 两秒后关闭弹窗并刷新列表
+                setTimeout(async () => {
+                    dialog.remove();
+                    await loadFavorites();
+                }, 2000);
+
             } catch (error) {
-                messageDiv.textContent = '保存失败：' + error.message;
-                messageDiv.className = 'save-message error';
+                console.error('保存失败:', error);
+                // 显示错误消息
+                messageDiv.textContent = error.message || '保存失败，请稍后重试';
+                messageDiv.className = 'error-message';
+                
+                // 恢复保存按钮状态
                 saveBtn.disabled = false;
                 saveBtn.textContent = '保存';
+                saveBtn.style.backgroundColor = '#0078d4';  // 恢复原来的颜色
             }
         });
     }
@@ -225,8 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadCategoriesAndTags(favorite) {
         try {
             // 加载分类
-            const categoriesResponse = await fetch(`${serverUrl}/api/categories`);
-            const categories = await categoriesResponse.json();
+            const categories = await window.utils.fetchApi('/api/categories');
             const categorySelect = document.querySelector('#category-select');
             categorySelect.innerHTML = ''; // 清空现有选项
             
@@ -236,32 +235,49 @@ document.addEventListener('DOMContentLoaded', function() {
             defaultOption.textContent = '请选择分类';
             categorySelect.appendChild(defaultOption);
             
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.textContent = category.name;
-                option.selected = category.id === favorite.category_id;
-                categorySelect.appendChild(option);
-            });
+            if (Array.isArray(categories)) {
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    option.selected = category.id === favorite.category_id;
+                    categorySelect.appendChild(option);
+                });
+            } else {
+                console.error('分类数据格式错误:', categories);
+            }
 
             // 加载标签
-            const tagsResponse = await fetch(`${serverUrl}/api/tags`);
-            const tags = await tagsResponse.json();
+            const tags = await window.utils.fetchApi('/api/tags');
             const tagSelect = document.querySelector('#tag-select');
             tagSelect.innerHTML = ''; // 清空现有选项
             
             // 解析已选标签
-            const selectedTags = favorite.tags ? JSON.parse(favorite.tags) : [];
+            const selectedTags = favorite.tags ? 
+                (typeof favorite.tags === 'string' ? JSON.parse(favorite.tags) : favorite.tags) 
+                : [];
             
-            tags.forEach(tag => {
-                const option = document.createElement('option');
-                option.value = tag.id;
-                option.textContent = tag.name;
-                option.selected = selectedTags.includes(tag.name); // 检查标签是否已选中
-                tagSelect.appendChild(option);
+            if (Array.isArray(tags)) {
+                tags.forEach(tag => {
+                    const option = document.createElement('option');
+                    option.value = tag.id;
+                    option.textContent = tag.name;
+                    option.selected = selectedTags.includes(tag.name); // 检查标签是否已选中
+                    tagSelect.appendChild(option);
+                });
+            } else {
+                console.error('标签数据格式错误:', tags);
+            }
+
+            console.log('分类和标签加载完成', {
+                categories,
+                tags,
+                selectedCategory: favorite.category_id,
+                selectedTags: selectedTags
             });
         } catch (error) {
             console.error('加载分类和标签失败:', error);
+            showMessage('加载分类和标签失败: ' + error.message, 'error');
         }
     }
 
@@ -272,18 +288,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const response = await fetch(`${serverUrl}/api/favorites/${id}`, {
+            await window.utils.fetchApi(`/api/favorites/${id}`, {
                 method: 'DELETE'
             });
 
-            if (response.ok) {
-                showMessage('删除成功', 'success');
-                loadFavorites();
-            } else {
-                throw new Error('删除失败');
-            }
+            // 使用统一的消息显示方式
+            showMessage('删除成功', 'success');
+            await loadFavorites();
         } catch (error) {
-            showMessage('删除失败: ' + error.message, 'error');
+            console.error('删除失败:', error);
+            showMessage('删除失败，请稍后重试', 'error');
         }
     }
 
@@ -291,26 +305,35 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadFilters() {
         try {
             // 加载分类
-            const categoriesResponse = await fetch(`${serverUrl}/api/categories`);
-            const categories = await categoriesResponse.json();
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.textContent = category.name;
-                categoryFilter.appendChild(option);
-            });
+            const categories = await window.utils.fetchApi('/api/categories');
+            categoryFilter.innerHTML = '<option value="">全部分类</option>';
+            if (Array.isArray(categories)) {
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    categoryFilter.appendChild(option);
+                });
+            } else {
+                console.error('分类数据格式错误:', categories);
+            }
 
             // 加载标签
-            const tagsResponse = await fetch(`${serverUrl}/api/tags`);
-            const tags = await tagsResponse.json();
-            tags.forEach(tag => {
-                const option = document.createElement('option');
-                option.value = tag.id;
-                option.textContent = tag.name;
-                tagFilter.appendChild(option);
-            });
+            const tags = await window.utils.fetchApi('/api/tags');
+            tagFilter.innerHTML = '<option value="">全部标签</option>';
+            if (Array.isArray(tags)) {
+                tags.forEach(tag => {
+                    const option = document.createElement('option');
+                    option.value = tag.id;
+                    option.textContent = tag.name;
+                    tagFilter.appendChild(option);
+                });
+            } else {
+                console.error('标签数据格式错误:', tags);
+            }
         } catch (error) {
-            showMessage('加载筛选选项失败: ' + error.message, 'error');
+            console.error('加载筛选选项失败:', error);
+            showMessage('加载筛选选项失败，请刷新页面重试', 'error');
         }
     }
 
@@ -344,16 +367,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 优化消息显示
     function showMessage(text, type) {
+        const messageDiv = document.getElementById('message');
         messageDiv.textContent = text;
-        messageDiv.className = `message ${type}`;
+        messageDiv.className = type;  // 使用 'success' 或 'error' 作为类名
         messageDiv.style.display = 'block';
         messageDiv.style.opacity = '1';
+        
+        // 添加动画效果
+        messageDiv.style.animation = 'fadeIn 0.3s ease';
         
         setTimeout(() => {
             messageDiv.style.opacity = '0';
             setTimeout(() => {
                 messageDiv.style.display = 'none';
+                messageDiv.style.animation = '';  // 清除动画，为下次显示做准备
             }, 300);
         }, 3000);
     }
+
+    // 修改初始化部分
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            await loadFilters();  // 先加载筛选选项
+            await loadFavorites(); // 再加载收藏列表
+        } catch (error) {
+            console.error('初始化失败:', error);
+            showMessage('页面初始化失败，请刷新重试', 'error');
+        }
+    });
 }); 

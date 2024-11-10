@@ -1,30 +1,43 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const newCategoryInput = document.getElementById('newCategory');
-    const addBtn = document.getElementById('addBtn');
-    const categoryTable = document.getElementById('categoryTable');
-    const messageDiv = document.getElementById('message');
-    let serverUrl;
-
-    // 获取服务器地址
-    chrome.storage.local.get(['serverUrl'], function(result) {
-        serverUrl = result.serverUrl || 'http://localhost:3000';
-        loadCategories();
-    });
-
-    // 加载分类列表
-    async function loadCategories() {
+class CategoryManager {
+    constructor() {
+        this.newCategoryInput = document.getElementById('newCategory');
+        this.addBtn = document.getElementById('addBtn');
+        this.categoryTable = document.getElementById('categoryTable');
+        this.messageDiv = document.getElementById('message');
+        
+        this.init();
+    }
+    
+    init() {
+        this.loadCategories();
+        this.bindEvents();
+    }
+    
+    bindEvents() {
+        this.addBtn.addEventListener('click', () => this.addCategory());
+    }
+    
+    async loadCategories() {
         try {
-            const response = await fetch(`${serverUrl}/api/categories`);
-            const categories = await response.json();
-            renderCategories(categories);
+            console.log('开始加载分类...');
+            const categories = await window.utils.fetchApi('/api/categories');
+            console.log('获取到的分类数据:', categories);
+            this.renderCategories(categories);
         } catch (error) {
-            showMessage('加载分类失败: ' + error.message, 'error');
+            console.error('加载分类失败:', error);
+            // 直接使用 showMessage 显示错误
+            window.utils.showMessage(this.messageDiv, '加载分类失败，请稍后重试', 'error');
         }
     }
 
-    // 渲染分类列表
-    function renderCategories(categories) {
-        categoryTable.innerHTML = '';
+    renderCategories(categories) {
+        console.log('开始渲染分类...');
+        if (!Array.isArray(categories)) {
+            console.error('分类数据不是数组格式:', categories);
+            return;
+        }
+        
+        this.categoryTable.innerHTML = '';
         categories.forEach(category => {
             const tr = document.createElement('tr');
             tr.dataset.id = category.id;
@@ -37,51 +50,42 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </td>
             `;
-            categoryTable.appendChild(tr);
+            this.categoryTable.appendChild(tr);
 
-            // 绑定编辑按钮事件
             tr.querySelector('.edit-btn').addEventListener('click', () => {
-                startEdit(tr, category);
+                this.startEdit(tr, category);
             });
 
-            // 绑定删除按钮事件
             tr.querySelector('.delete-btn').addEventListener('click', () => {
-                deleteCategory(category.id);
+                this.deleteCategory(category.id);
             });
         });
+        console.log('分类渲染完成');
     }
 
-    // 添加新分类
-    addBtn.addEventListener('click', async function() {
-        const name = newCategoryInput.value.trim();
+    async addCategory() {
+        const name = this.newCategoryInput.value.trim();
         if (!name) {
-            showMessage('请输入分类名称', 'error');
+            this.showErrorMessage('请输入分类名称');
             return;
         }
 
         try {
-            const response = await fetch(`${serverUrl}/api/categories`, {
+            await window.utils.fetchApi('/api/categories', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({ name })
             });
 
-            if (response.ok) {
-                showMessage('添加成功', 'success');
-                newCategoryInput.value = '';
-                loadCategories();
-            } else {
-                throw new Error('添加失败');
-            }
+            this.showSuccessMessage('添加成功');
+            this.newCategoryInput.value = '';
+            await this.loadCategories();
         } catch (error) {
-            showMessage('添加失败: ' + error.message, 'error');
+            console.error('添加分类失败:', error);
+            this.showErrorMessage('添加失败，请稍后重试');
         }
-    });
+    }
 
-    // 开始编辑
-    function startEdit(tr, category) {
+    startEdit(tr, category) {
         const nameCell = tr.querySelector('.category-name');
         const originalName = nameCell.textContent;
         
@@ -96,70 +100,94 @@ document.addEventListener('DOMContentLoaded', function() {
         const cancelBtn = nameCell.querySelector('.cancel-btn');
 
         saveBtn.addEventListener('click', () => {
-            updateCategory(category.id, input.value.trim());
+            this.updateCategory(category.id, input.value.trim());
         });
 
         cancelBtn.addEventListener('click', () => {
             nameCell.textContent = originalName;
         });
+
+        input.focus();
+        input.select();
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.updateCategory(category.id, input.value.trim());
+            }
+        });
     }
 
-    // 更新分类
-    async function updateCategory(id, name) {
+    async updateCategory(id, name) {
         if (!name) {
-            showMessage('分类名称不能为空', 'error');
+            this.showErrorMessage('分类名称不能为空');
             return;
         }
 
         try {
-            const response = await fetch(`${serverUrl}/api/categories/${id}`, {
+            await window.utils.fetchApi(`/api/categories/${id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name })
+                body: JSON.stringify({ 
+                    id: parseInt(id),  // 确保 id 是数字类型
+                    name: name 
+                })
             });
 
-            if (response.ok) {
-                showMessage('更新成功', 'success');
-                loadCategories();
-            } else {
-                throw new Error('更新失败');
-            }
+            this.showSuccessMessage('更新成功');
+            await this.loadCategories();
         } catch (error) {
-            showMessage('更新失败: ' + error.message, 'error');
+            console.error('更新分类失败:', error);
+            this.showErrorMessage(error.message || '服务器响应错误，请稍后重试');
         }
     }
 
-    // 删除分类
-    async function deleteCategory(id) {
+    async deleteCategory(id) {
         if (!confirm('确定要删除这个分类吗？')) {
             return;
         }
 
         try {
-            const response = await fetch(`${serverUrl}/api/categories/${id}`, {
+            await window.utils.fetchApi(`/api/categories/${id}`, {
                 method: 'DELETE'
             });
 
-            if (response.ok) {
-                showMessage('删除成功', 'success');
-                loadCategories();
-            } else {
-                throw new Error('删除失败');
-            }
+            this.showSuccessMessage('删除成功');
+            await this.loadCategories();
         } catch (error) {
-            showMessage('删除失败: ' + error.message, 'error');
+            console.error('删除分类失败:', error);
+            this.showErrorMessage('删除失败，请稍后重试');
         }
     }
 
-    // 显示消息
-    function showMessage(text, type) {
-        messageDiv.textContent = text;
-        messageDiv.className = `message ${type}`;
+    showErrorMessage(message) {
+        this.messageDiv.textContent = message;
+        this.messageDiv.className = 'error';
+        this.messageDiv.style.display = 'block';
+        this.messageDiv.style.opacity = '1';
         
         setTimeout(() => {
-            messageDiv.style.display = 'none';
+            this.messageDiv.style.opacity = '0';
+            setTimeout(() => {
+                this.messageDiv.style.display = 'none';
+            }, 300);
         }, 3000);
     }
+
+    showSuccessMessage(message) {
+        this.messageDiv.textContent = message;
+        this.messageDiv.className = 'success';
+        this.messageDiv.style.display = 'block';
+        this.messageDiv.style.opacity = '1';
+        
+        setTimeout(() => {
+            this.messageDiv.style.opacity = '0';
+            setTimeout(() => {
+                this.messageDiv.style.display = 'none';
+            }, 300);
+        }, 3000);
+    }
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    new CategoryManager();
 }); 
