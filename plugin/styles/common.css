@@ -83,11 +83,12 @@ th {
     border-radius: 4px;
     font-size: 14px;
     display: none;
-    z-index: 1000;
+    z-index: 10001;
     transition: opacity 0.3s ease;
     text-align: center;
     min-width: 200px;
     animation: fadeIn 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 #message.success {

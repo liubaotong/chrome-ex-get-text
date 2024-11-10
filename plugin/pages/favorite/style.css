@@ -47,15 +47,15 @@
     font-size: 14px;
     background-color: white;
     cursor: pointer;
-    height: 35px;  /* 固定高度 */
-    -webkit-appearance: none;  /* 移除默认样式 */
+    height: 35px;
+    -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-size: 16px;
-    padding-right: 30px;  /* 为下拉箭头留出空间 */
+    padding-right: 30px;
 }
 
 .filter-select:focus {
@@ -122,55 +122,4 @@
 
 .text-collector-dialog select[multiple].form-control {
     height: 120px;
-}
-
-/* 保存消息样式 */
-.dialog-footer {
-    position: relative;
-    padding: 20px 25px;
-}
-
-.dialog-footer #save-message {
-    margin-top: 10px;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 14px;
-    text-align: center;
-    animation: fadeIn 0.3s ease;
-}
-
-.dialog-footer #save-message.success-message {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    border: 1px solid #c3e6cb;
-}
-
-.dialog-footer #save-message.error-message {
-    background-color: #ffebee;
-    color: #c62828;
-    border: 1px solid #f5c6cb;
-}
-
-/* 保存按钮样式 */
-.dialog-footer #save-btn {
-    min-width: 100px;
-    padding: 10px 20px;
-    font-size: 15px;
-    transition: all 0.3s ease;
-}
-
-.dialog-footer #save-btn:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }

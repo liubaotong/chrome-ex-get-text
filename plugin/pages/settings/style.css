@@ -19,19 +19,13 @@
     margin-bottom: 10px;
 }
 
-.button-group {
-    justify-content: center;
-    margin-top: 30px;
-}
-
-#saveBtn {
-    background-color: #0078d4;
+/* 设置页面特定的按钮样式 */
+#saveBtn, #testBtn {
     min-width: 80px;
 }
 
 #testBtn {
     background-color: #5c5c5c;
-    min-width: 80px;
 }
 
 #message {

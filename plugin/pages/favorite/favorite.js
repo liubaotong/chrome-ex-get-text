@@ -173,14 +173,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 修改保存按钮事件处理部分
         dialog.querySelector('#save-btn').addEventListener('click', async () => {
             const saveBtn = dialog.querySelector('#save-btn');
-            const messageDiv = dialog.querySelector('#save-message');
 
             try {
                 // 禁用保存按钮并显示加载状态
                 saveBtn.disabled = true;
                 saveBtn.textContent = '保存中...';
                 saveBtn.style.backgroundColor = '#ccc';  // 设置为禁用状态的颜色
-                messageDiv.textContent = '';  // 清空之前的消息
 
                 const data = {
                     category_id: parseInt(dialog.querySelector('#category-select').value) || null,
@@ -195,11 +193,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                     body: JSON.stringify(data)
                 });
 
-                // 显示成功消息，恢复按钮状态
-                messageDiv.textContent = '保存成功';
-                messageDiv.className = 'success-message';
+                // 显示成功消息
+                showMessage('保存成功', 'success');
+                
+                // 恢复按钮状态
                 saveBtn.textContent = '保存';
-                saveBtn.style.backgroundColor = '#0078d4';  // 恢复原来的颜色
+                saveBtn.style.backgroundColor = '#0078d4';
                 
                 // 两秒后关闭弹窗并刷新列表
                 setTimeout(async () => {
@@ -209,14 +208,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             } catch (error) {
                 console.error('保存失败:', error);
-                // 显示错误消息
-                messageDiv.textContent = error.message || '保存失败，请稍后重试';
-                messageDiv.className = 'error-message';
+                showMessage('保存失败：' + (error.message || '请稍后重试'), 'error');
                 
                 // 恢复保存按钮状态
                 saveBtn.disabled = false;
                 saveBtn.textContent = '保存';
-                saveBtn.style.backgroundColor = '#0078d4';  // 恢复原来的颜色
+                saveBtn.style.backgroundColor = '#0078d4';
             }
         });
     }
