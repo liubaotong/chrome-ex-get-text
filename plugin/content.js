@@ -51,14 +51,14 @@ style.textContent = `
     background: white;
     padding: 25px 25px 10px;
     border-radius: 8px;
-    width: 360px;
+    width: 500px;
     max-height: 90vh;
     position: relative;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
   }
-  
+
   .close-btn {
     position: absolute;
     right: 10px;
@@ -104,7 +104,7 @@ style.textContent = `
   
   .form-group textarea {
     min-height: 100px;
-    max-height: 200px;
+    max-height: 250px;
     line-height: 1.6;
     resize: vertical;
     overflow-y: auto;
@@ -122,10 +122,9 @@ style.textContent = `
   .dialog-title {
     text-align: center;
     color: #2c3e50;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     margin-bottom: 15px;
-    margin-top: 10px;
   }
   
   .btn-container {

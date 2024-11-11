@@ -19,10 +19,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         search: ''
     };
 
-    // 使用 window.utils.getServerUrl() 替代直接获取
-    const serverUrl = await window.utils.getServerUrl();
-    loadFilters();
-    loadFavorites();
+    try {
+        await loadFilters();  // 先加载筛选选项
+        await loadFavorites(); // 再加载收藏列表
+    } catch (error) {
+        console.error('初始化失败:', error);
+        window.utils.showMessage(messageDiv, '页面初始化失败，请刷新重试', 'error');
+    }
 
     // 搜索输入防抖
     searchInput.addEventListener('input', function() {
@@ -72,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             renderFavorites(data.items);
             updatePagination();
         } catch (error) {
-            showMessage('加载收藏失败: ' + error.message, 'error');
+            window.utils.showMessage(messageDiv, '加载收藏失败: ' + error.message, 'error');
         }
     }
 
@@ -193,7 +196,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 });
 
                 // 显示成功消息
-                showMessage('保存成功', 'success');
+                window.utils.showMessage(messageDiv, '保存成功', 'success');
                 
                 // 恢复按钮状态
                 saveBtn.textContent = '保存';
@@ -207,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             } catch (error) {
                 console.error('保存失败:', error);
-                showMessage('保存失败：' + (error.message || '请稍后重试'), 'error');
+                window.utils.showMessage(messageDiv, '保存失败：' + (error.message || '请稍后重试'), 'error');
                 
                 // 恢复保存按钮状态
                 saveBtn.disabled = false;
@@ -273,7 +276,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         } catch (error) {
             console.error('加载分类和标签失败:', error);
-            showMessage('加载分类和标签失败: ' + error.message, 'error');
+            window.utils.showMessage(messageDiv, '加载分类和标签失败: ' + error.message, 'error');
         }
     }
 
@@ -289,11 +292,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
 
             // 使用统一的消息显示方式
-            showMessage('删除成功', 'success');
+            window.utils.showMessage(messageDiv, '删除成功', 'success');
             await loadFavorites();
         } catch (error) {
             console.error('删除失败:', error);
-            showMessage('删除失败，请稍后重试', 'error');
+            window.utils.showMessage(messageDiv, '删除失败，请稍后重试', 'error');
         }
     }
 
@@ -329,7 +332,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         } catch (error) {
             console.error('加载筛选选项失败:', error);
-            showMessage('加载筛选选项失败，请刷新页面重试', 'error');
+            window.utils.showMessage(messageDiv, '加载筛选选项失败，请刷新页面重试', 'error');
         }
     }
 
@@ -360,35 +363,4 @@ document.addEventListener('DOMContentLoaded', async function() {
         currentFilters.tag = tagFilter.value;
         loadFavorites();
     });
-
-    // 优化消息显示
-    function showMessage(text, type) {
-        const messageDiv = document.getElementById('message');
-        messageDiv.textContent = text;
-        messageDiv.className = type;  // 使用 'success' 或 'error' 作为类名
-        messageDiv.style.display = 'block';
-        messageDiv.style.opacity = '1';
-        
-        // 添加动画效果
-        messageDiv.style.animation = 'fadeIn 0.3s ease';
-        
-        setTimeout(() => {
-            messageDiv.style.opacity = '0';
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-                messageDiv.style.animation = '';  // 清除动画，为下次显示做准备
-            }, 300);
-        }, 3000);
-    }
-
-    // 修改初始化部分
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
-            await loadFilters();  // 先加载筛选选项
-            await loadFavorites(); // 再加载收藏列表
-        } catch (error) {
-            console.error('初始化失败:', error);
-            showMessage('页面初始化失败，请刷新重试', 'error');
-        }
-    });
-}); 
+});

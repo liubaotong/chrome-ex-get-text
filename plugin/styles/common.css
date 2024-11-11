@@ -160,8 +160,20 @@ th {
     padding: 12px 25px;
     border-bottom: 1px solid #eee;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+}
+
+.dialog-title {
+    font-size: 20px;
+    margin: 10px 0;
+}
+
+.close-btn {
+    position: absolute;
+    right: 1em;
+    top: 1em;
+    cursor: pointer;
 }
 
 .dialog-body {

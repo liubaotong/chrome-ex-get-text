@@ -66,7 +66,7 @@ class CategoryManager {
     async addCategory() {
         const name = this.newCategoryInput.value.trim();
         if (!name) {
-            this.showErrorMessage('请输入分类名称');
+            window.utils.showMessage(this.messageDiv, '请输入分类名称', 'error');
             return;
         }
 
@@ -76,12 +76,12 @@ class CategoryManager {
                 body: JSON.stringify({ name })
             });
 
-            this.showSuccessMessage('添加成功');
+            window.utils.showMessage(this.messageDiv, '添加成功', 'success');
             this.newCategoryInput.value = '';
             await this.loadCategories();
         } catch (error) {
             console.error('添加分类失败:', error);
-            this.showErrorMessage('添加失败，请稍后重试');
+            window.utils.showMessage(this.messageDiv, '添加失败，请稍后重试', 'error');
         }
     }
 
@@ -119,7 +119,7 @@ class CategoryManager {
 
     async updateCategory(id, name) {
         if (!name) {
-            this.showErrorMessage('分类名称不能为空');
+            window.utils.showMessage(this.messageDiv, '分类名称不能为空', 'error');
             return;
         }
 
@@ -132,11 +132,11 @@ class CategoryManager {
                 })
             });
 
-            this.showSuccessMessage('更新成功');
+            window.utils.showMessage(this.messageDiv, '更新成功', 'success');
             await this.loadCategories();
         } catch (error) {
             console.error('更新分类失败:', error);
-            this.showErrorMessage(error.message || '服务器响应错误，请稍后重试');
+            window.utils.showMessage(this.messageDiv, error.message || '服务器响应错误，请稍后重试', 'error');
         }
     }
 
@@ -150,40 +150,12 @@ class CategoryManager {
                 method: 'DELETE'
             });
 
-            this.showSuccessMessage('删除成功');
+            window.utils.showMessage(this.messageDiv, '删除成功', 'success');
             await this.loadCategories();
         } catch (error) {
             console.error('删除分类失败:', error);
-            this.showErrorMessage('删除失败，请稍后重试');
+            window.utils.showMessage(this.messageDiv, '删除失败，请稍后重试', 'error');
         }
-    }
-
-    showErrorMessage(message) {
-        this.messageDiv.textContent = message;
-        this.messageDiv.className = 'error';
-        this.messageDiv.style.display = 'block';
-        this.messageDiv.style.opacity = '1';
-        
-        setTimeout(() => {
-            this.messageDiv.style.opacity = '0';
-            setTimeout(() => {
-                this.messageDiv.style.display = 'none';
-            }, 300);
-        }, 3000);
-    }
-
-    showSuccessMessage(message) {
-        this.messageDiv.textContent = message;
-        this.messageDiv.className = 'success';
-        this.messageDiv.style.display = 'block';
-        this.messageDiv.style.opacity = '1';
-        
-        setTimeout(() => {
-            this.messageDiv.style.opacity = '0';
-            setTimeout(() => {
-                this.messageDiv.style.display = 'none';
-            }, 300);
-        }, 3000);
     }
 }
 

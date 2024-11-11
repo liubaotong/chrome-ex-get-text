@@ -25,7 +25,7 @@ class TagManager {
             this.renderTags(tags);
         } catch (error) {
             console.error('加载标签失败:', error);
-            this.showErrorMessage('加载标签失败');
+            window.utils.showMessage(this.messageDiv, '加载标签失败', 'error');
         }
     }
 
@@ -65,7 +65,7 @@ class TagManager {
     async addTag() {
         const name = this.newTagInput.value.trim();
         if (!name) {
-            this.showErrorMessage('请输入标签名称');
+            window.utils.showMessage(this.messageDiv, '请输入标签名称', 'error');
             return;
         }
 
@@ -75,11 +75,11 @@ class TagManager {
                 body: JSON.stringify({ name })
             });
 
-            this.showSuccessMessage('添加成功');
+            window.utils.showMessage(this.messageDiv, '添加成功', 'success');
             this.newTagInput.value = '';
             await this.loadTags();
         } catch (error) {
-            this.showErrorMessage('添加标签失败');
+            window.utils.showMessage(this.messageDiv, '添加标签失败', 'error');
         }
     }
 
@@ -117,7 +117,7 @@ class TagManager {
 
     async updateTag(id, name) {
         if (!name) {
-            this.showErrorMessage('标签名称不能为空');
+            window.utils.showMessage(this.messageDiv, '标签名称不能为空', 'error');
             return;
         }
 
@@ -127,10 +127,10 @@ class TagManager {
                 body: JSON.stringify({ name })
             });
 
-            this.showSuccessMessage('更新成功');
+            window.utils.showMessage(this.messageDiv, '更新成功', 'success');
             await this.loadTags();
         } catch (error) {
-            this.showErrorMessage('更新标签失败');
+            window.utils.showMessage(this.messageDiv, '更新标签失败', 'error');
         }
     }
 
@@ -144,39 +144,11 @@ class TagManager {
                 method: 'DELETE'
             });
 
-            this.showSuccessMessage('删除成功');
+            window.utils.showMessage(this.messageDiv, '删除成功', 'success');
             await this.loadTags();
         } catch (error) {
-            this.showErrorMessage('删除标签失败');
+            window.utils.showMessage(this.messageDiv, '删除标签失败', 'error');
         }
-    }
-
-    showErrorMessage(message) {
-        this.messageDiv.textContent = message;
-        this.messageDiv.className = 'error';
-        this.messageDiv.style.display = 'block';
-        this.messageDiv.style.opacity = '1';
-        
-        setTimeout(() => {
-            this.messageDiv.style.opacity = '0';
-            setTimeout(() => {
-                this.messageDiv.style.display = 'none';
-            }, 300);
-        }, 3000);
-    }
-
-    showSuccessMessage(message) {
-        this.messageDiv.textContent = message;
-        this.messageDiv.className = 'success';
-        this.messageDiv.style.display = 'block';
-        this.messageDiv.style.opacity = '1';
-        
-        setTimeout(() => {
-            this.messageDiv.style.opacity = '0';
-            setTimeout(() => {
-                this.messageDiv.style.display = 'none';
-            }, 300);
-        }, 3000);
     }
 }
 
